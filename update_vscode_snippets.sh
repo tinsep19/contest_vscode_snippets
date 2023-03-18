@@ -1,23 +1,35 @@
 #!/bin/bash
 
 function snippet_entry() {
-  NAME=$1
-  PREFIX=$2
-  FILE=$3
+  local key=$1
+  local prefix=$2
+  local file=$3
 
-  BODY=$(jq '.' "$FILE" -R | jq -s '.')
-  jq '{ key: $name, value: {prefix: $prefix, body: . }}' --arg name "$NAME" --arg prefix "$PREFIX" <<<$BODY
+  local body=$(jq '.' "$file" -R | jq -s '.')
+  local args=()
+  args+=(--arg name "$key")
+  args+=(--arg prefix "$prefix")
+
+  jq "${args[@]}" '{ key: $name, value: {prefix: $prefix, body: . }}' <<<$body
 }
 
-snippets=()
-snippets+=("$(snippet_entry "UnionFind" "@@_ union_find" "union_find.rb")")
-snippets+=("$(snippet_entry "SPFA" "@@_ spfa" "spfa.rb")")
-snippets+=("$(snippet_entry "C[n,r]" "@@_ mod_comb" "mod_comb.rb")")
-snippets+=("$(snippet_entry "Graph" "@@_ graph" "graph.rb")")
-snippets+=("$(snippet_entry "FenwickTree" "@@_ fenwick_tree" "fenwick_tree.rb")")
-snippets+=("$(snippet_entry "Dijkstra" "@@_ dijkstra" "dijkstra.rb")")
-snippets+=("$(snippet_entry "Flow" "@@_ flow" "flow.rb")")
-snippets+=("$(snippet_entry "yes!;no!" "@@_ yesno" "yesno.rb")")
+function add_snippet(){
+  local key=$1
+  local prefix=$2
+  local file=$3
+  snippets+=("$(snippet_entry "$key" "$prefix" "$file")")
+}
 
 SNIPPETS_PATH="$HOME/.config/Code/User/snippets/ruby.json"
+snippets=()
+
+add_snippet "UnionFind" "@@_ union_find" "union_find.rb"
+add_snippet "SPFA" "@@_ spfa" "spfa.rb"
+add_snippet "C[n,r]" "@@_ mod_comb" "mod_comb.rb"
+add_snippet "Graph" "@@_ graph" "graph.rb"
+add_snippet "FenwickTree" "@@_ fenwick_tree" "fenwick_tree.rb"
+add_snippet "Dijkstra" "@@_ dijkstra" "dijkstra.rb"
+add_snippet "Flow" "@@_ flow" "flow.rb"
+add_snippet "yes!;no!" "@@_ yesno" "yesno.rb"
+
 jq 'from_entries' -s <<<"${snippets[*]}" | tee "$SNIPPETS_PATH"
