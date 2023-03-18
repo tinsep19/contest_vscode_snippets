@@ -20,8 +20,12 @@ function add_snippet(){
   snippets+=("$(snippet_entry "$key" "$prefix" "$file")")
 }
 
-SNIPPETS_PATH="$HOME/.config/Code/User/snippets/ruby.json"
+function merge_snippets(){
+  jq 'from_entries' -s <<<"${snippets[*]}"  
+}
+
 snippets=()
+SNIPPETS_PATH="$HOME/.config/Code/User/snippets/ruby.json"
 
 add_snippet "UnionFind" "@@_ union_find" "union_find.rb"
 add_snippet "SPFA" "@@_ spfa" "spfa.rb"
@@ -32,4 +36,4 @@ add_snippet "Dijkstra" "@@_ dijkstra" "dijkstra.rb"
 add_snippet "Flow" "@@_ flow" "flow.rb"
 add_snippet "yes!;no!" "@@_ yesno" "yesno.rb"
 
-jq 'from_entries' -s <<<"${snippets[*]}" | tee "$SNIPPETS_PATH"
+merge_snippets | tee "$SNIPPETS_PATH"
