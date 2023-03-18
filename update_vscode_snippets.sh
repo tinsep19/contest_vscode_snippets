@@ -10,11 +10,13 @@ function snippet_entry() {
 }
 
 snippets=()
-snippets+=("$(snippet_entry "UnionFind" "@@_ union_find" union_find.rb)")
-snippets+=("$(snippet_entry "SPFA" "@@_ spfa" spfa.rb)")
-snippets+=("$(snippet_entry "C[n,r]" "@@_ mod_comb" mod_comb.rb)")
-snippets+=("$(snippet_entry "Graph" "@@_ graph" graph.rb)")
-snippets+=("$(snippet_entry "yes!;no!" "@@_ yesno" yesno.rb)")
+snippets+=("$(snippet_entry "UnionFind" "@@_ union_find" "union_find.rb")")
+snippets+=("$(snippet_entry "SPFA" "@@_ spfa" "spfa.rb")")
+snippets+=("$(snippet_entry "C[n,r]" "@@_ mod_comb" "mod_comb.rb")")
+snippets+=("$(snippet_entry "Graph" "@@_ graph" "graph.rb")")
+snippets+=("$(snippet_entry "FenwickTree" "@@_ fenwick_tree" "fenwick_tree.rb")")
+snippets+=("$(snippet_entry "Dijkstra" "@@_ dijkstra" "dijkstra.rb")")
+snippets+=("$(snippet_entry "yes!;no!" "@@_ yesno" "yesno.rb")")
 
 SNIPPETS_PATH="$HOME/.config/Code/User/snippets/ruby.json"
 jq 'from_entries' -s <<<"${snippets[*]}" | tee "$SNIPPETS_PATH"
