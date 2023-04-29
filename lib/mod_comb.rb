@@ -1,3 +1,4 @@
+# C[n, r]
 def comb(mod)
   minv = [0, 1]
   finv = [1, 1]
