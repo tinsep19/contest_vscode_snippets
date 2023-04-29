@@ -30,14 +30,8 @@ function merge_snippets(){
 
 snippets=()
 SNIPPETS_PATH=$HOME/.config/Code/User/snippets/ruby.json
-
-add_snippet "UnionFind" "_@ union_find" "src/union_find.rb"
-add_snippet "SPFA" "_@ spfa" "src/spfa.rb"
-add_snippet "C[n,r]" "_@ mod_comb" "src/mod_comb.rb"
-add_snippet "Graph" "_@ graph" "src/graph.rb"
-add_snippet "FenwickTree" "_@ fenwick_tree" "src/fenwick_tree.rb"
-add_snippet "Dijkstra" "_@ dijkstra" "src/dijkstra.rb"
-add_snippet "Flow" "_@ flow" "src/flow.rb"
-add_snippet "yes!;no!" "_@ yesno" "src/yesno.rb"
+for f in lib/*.rb; do
+  add_snippet "$(basename $f)" "$(basename $f)" "$f"
+done
 
 merge_snippets | tee "$SNIPPETS_PATH"
