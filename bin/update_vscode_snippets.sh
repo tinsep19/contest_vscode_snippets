@@ -29,9 +29,10 @@ function merge_snippets(){
 }
 
 snippets=()
-SNIPPETS_PATH=$HOME/.config/Code/User/snippets/ruby.json
-for f in lib/*.rb; do
+SNIPPETS_DIR="$(cd $(dirname $0); pwd)/../lib"
+VSCODE_SNIPPETS_PATH=$HOME/.config/Code/User/snippets/ruby.json
+for f in $SNIPPETS_DIR/*.rb; do
   add_snippet "$(basename $f)" "$(basename $f)" "$f"
 done
 
-merge_snippets | tee "$SNIPPETS_PATH"
+merge_snippets | tee "$VSCODE_SNIPPETS_PATH"
