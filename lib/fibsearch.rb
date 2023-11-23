@@ -1,16 +1,35 @@
-# fibsearch(l, r){|i, j| } # l <= i < j < r
-# return i of argmin{ f(i) } 
-# block must return true when i has higher priority than j.
-def fibsearch(l, r, &block)
+# fibonacci search
+
+def fibsearch(l, r, &f)
   offset, a, b = l - 1, 1, 1
-  a, b = b, b + a while offset + a + b < r
+  a, b = b, b + a while offset + b < r
+  xa, xb = nil, nil
   while b > 1
-    offset += a if offset + b < r && !block[offset + a, offset + b]
+    xa ||= f[offset + a]
+    xb ||= f[offset + b] if offset + b < r
     a, b = b - a, a
+    if xb && xa > xb
+      offset, xa, xb = offset + b, xb, nil
+    else
+      xa, xb = nil, xa
+    end
+  end
+  return xa || xb
+end
+
+def fibsearch_index(l, r, &f)
+  offset, a, b = l - 1, 1, 1
+  a, b = b, b + a while offset + b < r
+  xa, xb = nil, nil
+  while b > 1
+    xa ||= f[offset + a]
+    xb ||= f[offset + b] if offset + b < r
+    a, b = b - a, a
+    if xb && xa > xb
+      offset, xa, xb = offset + b, xb, nil
+    else
+      xa, xb = nil, xa
+    end
   end
   return offset + 1
 end
-# Example. 
-# search minimal values in array. array is convex downward values.
-# array = [5,4,3,2,1,2,3,4,5]
-# fibsearch(0, array.size){|i, j| array[i] < array[j] } # 4
