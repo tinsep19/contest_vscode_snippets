@@ -1,4 +1,7 @@
 # fibonacci search
+# search min{ f[x] | x \in [l, r) } 
+# if you want max, fix xa > xb -> xa < xb 
+# call fibsearch(l, r){|x| -f(x) }
 
 def fibsearch(l, r, &f)
   offset, a, b = l - 1, 1, 1
