@@ -1,3 +1,19 @@
+# L - Lazy Segment Tree
+# AC https://atcoder.jp/contests/practice2/submissions/51768915
+# N, Q = gets.split.map(&:to_i)
+# A = gets.split.map(&:to_i)
+# lz = LazySegmentTree.from(A.map{|a| [1 - a, a, 0] })
+# ans = []
+# Q.times do
+#   t, l, r = gets.split.map(&:to_i)
+#   if t == 1
+#     lz.add(l - 1, r, 1)
+#   else
+#     ans << lz.sum(l - 1, r)[2]
+#   end
+# end
+# puts ans
+
 class LazySegmentTree
   # define below
   def id; 0; end
@@ -109,16 +125,3 @@ class LazySegmentTree
   end
 end
 
-N, Q = gets.split.map(&:to_i)
-A = gets.split.map(&:to_i)
-lz = LazySegmentTree.from(A.map{|a| [1 - a, a, 0] })
-ans = []
-Q.times do
-  t, l, r = gets.split.map(&:to_i)
-  if t == 1
-    lz.add(l - 1, r, 1)
-  else
-    ans << lz.sum(l - 1, r)[2]
-  end
-end
-puts ans
