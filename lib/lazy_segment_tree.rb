@@ -1,124 +1,83 @@
-# L - Lazy Segment Tree
-# AC https://atcoder.jp/contests/practice2/submissions/51768915
-# N, Q = gets.split.map(&:to_i)
-# A = gets.split.map(&:to_i)
-# lz = LazySegmentTree.from(A.map{|a| [1 - a, a, 0] })
-# ans = []
-# Q.times do
-#   t, l, r = gets.split.map(&:to_i)
-#   if t == 1
-#     lz.add(l - 1, r, 1)
-#   else
-#     ans << lz.sum(l - 1, r)[2]
-#   end
-# end
-# puts ans
-
+# Usage
+# 1. Define Node.
+#    require methods: :map!, :merge!, :composite!, :act, constructor without parameter.
+# 2. lz = LazySegmentTree.new(Node, n){|i, node| ... }
+# 3. lz.update(l, r, x)
+# 4. lz.query(l, r)
+# 
 class LazySegmentTree
-  # define below
-  def id; 0; end
-  def e; [0, 0, 0]; end
-
-  def mapping(a, x)
-    return a if x.zero?
-    a0, a1, at = a
-    a[0] = a1; a[1] = a0; a[2] = a1 * a0 - at
-    return a
-  end
-
-  def composite(x, y, out = nil)
-    x ^ y
-  end
-
-  def op(a, b, out = nil)
-    a0, a1, at = a
-    b0, b1, bt = b
-    out[0] = a0 + b0; out[1] = a1 + b1; out[2] = at + bt + a1 * b0
-    out
+  
+  def initialize(node_class, n, &block)
+    @node_class = node_class
+    verify_node_class!
+    @size = n
+    @offset = (1 << n.bit_length)
+    @node = Array.new(@offset << 1){ node_class.new }
+    n.times{|i| block[i, @node[@offset + i]] } if block
+    k = @offset
+    merge(k) while (k -= 1) > 0
   end
   
-  # customize here at initialize from Array.
-
-  class << self
-    def from(seq); new(seq.size).build(seq); end
+  def verify_node_class!
+    require_methods = [:merge!, :composite!, :map!, :act]
+    require_methods.reject!{|sym| @node_class.method_defined?(sym) }
+    raise "#{require_methods} was not defined." if require_methods.size > 0
   end
   
-  def build(seq)
-    seq.each_with_index{|a, i| @node[@offset + i] = a }
-    i = @offset
-    merge(i) while (i -= 1) > 0
-    self
-  end
-  
-  # Templates  
-  attr_reader :commutative_operator
-  def initialize(n)
-    @offset = 1 << (n - 1).bit_length
-    @node = Array.new(@offset << 1){ e }
-    @cmd = Array.new(@offset << 1){ id }
-    @commutative_operator = true
-  end
-  
-
-  def apply(k, x = id)
-    x = composite(x, @cmd[k], x)
-    @cmd[k] = id
-    @node[k] = mapping(@node[k], x)
-    return @node[k] if k >= @offset
-    
-    @cmd[2 * k] = composite(x, @cmd[2 * k], @cmd[2 * k])
-    @cmd[2 * k + 1] = composite(x, @cmd[2 * k + 1], @cmd[2 * k + 1])
-    return @node[k]
+  def apply(k, x = nil)
+    current = @node[k]
+    current.composite!(x) if x
+    f = current.act
+    if k < @offset
+      @node[2 * k].composite!(f)
+      @node[2 * k + 1].composite!(f)
+    end
+    current.map!
   end
   
   def merge(k)
-    @node[k] = apply(k)
-    return @node[k] if k >= @offset
-    @node[k] = op(apply(2 * k), apply(2 * k + 1), @node[k])
-    return @node[k]
+    @node[k].merge!(@node[2 * k], @node[2 * k + 1])
   end
 
-  def revalidates(l, r)
-    return [1] if r - l == @offset
-    a = l / (l & -l); b = r / (r & -r)
+  def g_index(l, r)
+    a = l / (l & -l)
+    b = r / (r & -r)
     g = []
-    while l < r
+    while l > 0 && l < r
       g << r if r < b
       g << l if l < a
       l >>= 1; r >>= 1
     end
-    while l > 0
-      g << l
-      l >>= 1
-    end
+    (g << l; l >>= 1) while l > 0
     g
   end
-
-  def sum(l, r)
+  
+  def query(l, r)
     l += @offset
     r += @offset
+    g = g_index(l, r)
 
-    g = revalidates(l, r)
+    lx = @node_class.new
+    rx = @node_class.new
     g.reverse_each{|k| apply(k) }
-    
-    lx = e; rx = e
     while l < r
-      (lx = op(lx, apply(l), lx) and l += 1) if l.odd?
-      (r -= 1 and rx = op(apply(r), rx, rx)) if r.odd?
+      (lx.merge!(lx, @node[l]); l += 1) if l.odd?
+      (r -= 1; rx.merge!(@node[r], rx)) if r.odd?
       l >>= 1; r >>= 1
     end
-    return op(lx, rx, lx)
+    lx.merge!(lx, rx)
+    lx
   end
-
-  def add(l, r, x)
+  
+  def update(l, r, x)
     l += @offset
     r += @offset
-    g = revalidates(l, r)
+    g = g_index(l, r)
 
-    g.reverse_each{|k| apply(k) } if !@commutative_operator
+    g.reverse_each{|k| apply(k) }
     while l < r
-      (apply(l, x) and l += 1) if l.odd?
-      (r -= 1 and apply(r, x)) if r.odd?
+      (apply(l, x); l += 1) if l.odd?
+      (r -= 1; apply(r, x)) if r.odd?
       l >>= 1; r >>= 1
     end
     g.each{|k| merge(k) }
