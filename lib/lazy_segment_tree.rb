@@ -17,7 +17,39 @@ class LazySegmentTree
     k = @offset
     merge(k) while (k -= 1) > 0
   end
+
+  def query(l, r)
+    l += @offset
+    r += @offset
+    g = adaptive_group(l, r)
+
+    lx = @node_class.new
+    rx = @node_class.new
+    g.reverse_each{|k| apply(k) }
+    while l < r
+      (lx.merge!(lx, @node[l]); l += 1) if l.odd?
+      (r -= 1; rx.merge!(@node[r], rx)) if r.odd?
+      l >>= 1; r >>= 1
+    end
+    lx.merge!(lx, rx)
+    lx
+  end
   
+  def update(l, r, x)
+    l += @offset
+    r += @offset
+    g = adaptive_group(l, r)
+
+    g.reverse_each{|k| apply(k) }
+    while l < r
+      (apply(l, x); l += 1) if l.odd?
+      (r -= 1; apply(r, x)) if r.odd?
+      l >>= 1; r >>= 1
+    end
+    g.each{|k| merge(k) }
+  end
+
+  private
   def verify_node_class!
     require_methods = [:merge!, :composite!, :map!, :act]
     require_methods.reject!{|sym| @node_class.method_defined?(sym) }
@@ -39,7 +71,7 @@ class LazySegmentTree
     @node[k].merge!(@node[2 * k], @node[2 * k + 1])
   end
 
-  def g_index(l, r)
+  def adaptive_group(l, r)
     a = l / (l & -l)
     b = r / (r & -r)
     g = []
@@ -51,36 +83,6 @@ class LazySegmentTree
     (g << l; l >>= 1) while l > 0
     g
   end
-  
-  def query(l, r)
-    l += @offset
-    r += @offset
-    g = g_index(l, r)
 
-    lx = @node_class.new
-    rx = @node_class.new
-    g.reverse_each{|k| apply(k) }
-    while l < r
-      (lx.merge!(lx, @node[l]); l += 1) if l.odd?
-      (r -= 1; rx.merge!(@node[r], rx)) if r.odd?
-      l >>= 1; r >>= 1
-    end
-    lx.merge!(lx, rx)
-    lx
-  end
-  
-  def update(l, r, x)
-    l += @offset
-    r += @offset
-    g = g_index(l, r)
-
-    g.reverse_each{|k| apply(k) }
-    while l < r
-      (apply(l, x); l += 1) if l.odd?
-      (r -= 1; apply(r, x)) if r.odd?
-      l >>= 1; r >>= 1
-    end
-    g.each{|k| merge(k) }
-  end
 end
 
