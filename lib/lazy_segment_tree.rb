@@ -18,14 +18,14 @@ class LazySegmentTree
     merge(k) while (k -= 1) > 0
   end
 
-  def query(l, r)
+  def prod(l, r)
     l += @offset
     r += @offset
     g = adaptive_group(l, r)
 
     lx = @node_class.new
     rx = @node_class.new
-    g.reverse_each{|k| apply(k) }
+    g.reverse_each{|k| propagate(k) }
     while l < r
       (lx.merge!(lx, @node[l]); l += 1) if l.odd?
       (r -= 1; rx.merge!(@node[r], rx)) if r.odd?
@@ -35,15 +35,15 @@ class LazySegmentTree
     lx
   end
   
-  def update(l, r, x)
+  def apply(l, r, x)
     l += @offset
     r += @offset
     g = adaptive_group(l, r)
 
-    g.reverse_each{|k| apply(k) }
+    g.reverse_each{|k| propagate(k) }
     while l < r
-      (apply(l, x); l += 1) if l.odd?
-      (r -= 1; apply(r, x)) if r.odd?
+      (propagate(l, x); l += 1) if l.odd?
+      (r -= 1; propagate(r, x)) if r.odd?
       l >>= 1; r >>= 1
     end
     g.each{|k| merge(k) }
@@ -56,7 +56,7 @@ class LazySegmentTree
     raise "#{require_methods} was not defined." if require_methods.size > 0
   end
   
-  def apply(k, x = nil)
+  def propagate(k, x = nil)
     current = @node[k]
     current.composite!(x) if x
     f = current.act
