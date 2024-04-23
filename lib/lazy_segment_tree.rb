@@ -1,23 +1,20 @@
-# Usage
-# 1. Define Node.
-#    require methods: :map!, :merge!, :composite!, :act, constructor without parameter.
-# 2. lz = LazySegmentTree.new(Node, n){|i, node| ... }
-# 3. lz.apply(l, r, x)
-# 4. lz.prod(l, r)
 class LazySegmentTree
-
   # LazySegmentTree.new(Node, n){|i, node| ... }
   def initialize(node_class, n, &block)
     @commutative = false
     @node_class = node_class
     verify_node_class!
     @size = n
-    @offset = (1 << n.bit_length)
+    @offset = (1 << (n - 1).bit_length)
     @node = Array.new(@offset << 1){ node_class.new }
     n.times{|i| block[i, @node[@offset + i]] } if block
     k = @offset
     merge(k) while (k -= 1) > 0
   end
+
+  # When @commutative is true, #apply (l,r,x) does not propagate @act values.
+  # Advance when composition(f, g) is commutative.
+  # default: false
   attr_accessor :commutative
   
   def prod(l, r)
@@ -85,6 +82,4 @@ class LazySegmentTree
     (g << l; l >>= 1) while l > 0
     g
   end
-
 end
-
