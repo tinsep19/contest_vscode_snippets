@@ -2,12 +2,13 @@
 # 1. Define Node.
 #    require methods: :map!, :merge!, :composite!, :act, constructor without parameter.
 # 2. lz = LazySegmentTree.new(Node, n){|i, node| ... }
-# 3. lz.update(l, r, x)
-# 4. lz.query(l, r)
-# 
+# 3. lz.apply(l, r, x)
+# 4. lz.prod(l, r)
 class LazySegmentTree
-  
+
+  # LazySegmentTree.new(Node, n){|i, node| ... }
   def initialize(node_class, n, &block)
+    @commutative = false
     @node_class = node_class
     verify_node_class!
     @size = n
@@ -17,7 +18,8 @@ class LazySegmentTree
     k = @offset
     merge(k) while (k -= 1) > 0
   end
-
+  attr_accessor :commutative
+  
   def prod(l, r)
     l += @offset
     r += @offset
@@ -34,13 +36,13 @@ class LazySegmentTree
     lx.merge!(lx, rx)
     lx
   end
-  
+
   def apply(l, r, x)
     l += @offset
     r += @offset
     g = adaptive_group(l, r)
 
-    g.reverse_each{|k| propagate(k) }
+    g.reverse_each{|k| propagate(k) } unless @commutative
     while l < r
       (propagate(l, x); l += 1) if l.odd?
       (r -= 1; propagate(r, x)) if r.odd?
