@@ -59,7 +59,7 @@ class LowLink
     })[s, -1]
     # articulation points is,
     # root has two or more children on DFS tree, 
-    # other node (u) has at least one children (v) that satisfied low[v] < ord[u].
+    # Other, node (u) has at least one children (v) that satisfied low[v] < ord[u].
     used[s] -= 1
     n.times.select{|u| used[u] > 0 }
   end
