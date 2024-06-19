@@ -18,7 +18,8 @@ class BinaryHeap
     while i > 0
       up = (i - 1) >> 1
       break if _higher?(@heap[up], x)
-      @heap[i], i = @heap[up], up
+      @heap[i] = @heap[up]
+      i = up
     end
     @heap[i] = x
   end
