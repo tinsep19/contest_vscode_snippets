@@ -25,7 +25,7 @@ class Graph
   def add_edge(a,b,w=1); @g[a] << Edge.new(b, w);@g[b] << Edge.new(a, w); self; end
 
   # dijkstra(s) -> Array # dist[t] : total cost of s - t
-  def dijkstra(s)
+  def dijkstra(s, t = nil)
     q = Heap.new
     dist = Array.new(@g.size, Float::INFINITY)
     dist[s] = 0
@@ -34,6 +34,7 @@ class Graph
     until q.empty?
       d, u = q.pop
       next if d != dist[u]
+      return d if t && u == t
       @g[u].each do |e|
         sw = d + e.w
         next if sw >= dist[e.to]
@@ -67,7 +68,8 @@ class Graph
       while i > 0
         up = (i - 1) / 2
         break if @h[up][0] <= pr
-        @h[i], i = @h[up], up
+        @h[i] = @h[up] 
+        i = up
       end
       @h[i] = x
     end
@@ -79,7 +81,8 @@ class Graph
       while (c = i + i + 1) < z
         c += 1 if c + 1 < z && @h[c + 1][0] < @h[c][0]
         break if pr <= @h[c][0]
-        @h[i], i = @h[c], c
+        @h[i] = @h[c] 
+        i = c
       end
       @h[i] = x
     end
