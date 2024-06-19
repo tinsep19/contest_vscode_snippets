@@ -30,7 +30,8 @@ class BinaryHeap
     while (j = 2 * up + 1) < n
       j += 1 if j + 1 < n && _higher?(@heap[j + 1], @heap[j])
       break if _higher?(x, @heap[j])
-      @heap[up], up = @heap[j], j
+      @heap[up] = @heap[j]
+      up = j
     end
     @heap[up] = x
   end
