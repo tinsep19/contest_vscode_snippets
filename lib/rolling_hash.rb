@@ -1,92 +1,138 @@
 # Usage. 
-# param = RollingHash.params(x, mod) # mod is prime, x < m
-# cs = param.cumsum([1, 2, 3, 4, 5]) # seq is static
-# st = param.segment_tree([1, 2, 3, 4, 5]) # seq is dynamic. 
-# puts cs[1,4] # show hash [2,3,4]
-# puts st[1,4] # show hash [2,3,4]
-# st[1] = 3 # update. [1, 3, 3, 4, 5]
-# puts st[1,4] # show hash [3,3,4]
+# rh = RollingHash.create(1000)
+# seq = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5]
+# r1 = rh.cumsum(seq)       # cumsum is static
+# r2 = rh.segment_tree(seq) # segment_tree is dynamic. 
+# # show hash of [3,4,5]
+# puts r1[2, 5]
+# puts r2[2, 5]
+#
+# # show hash of [1, 2, 3, 4, 5]
+# puts r1[0, 5]
+# puts rh.join(r2[5, 7], 2, r1[7, 10], 3)
 
 module RollingHash
   class << self
-    def param(x = 998244353, m = 10 ** 9 + 7); Param.new(x, m); end
-  end
-  class Param
-    attr_reader :x, :mod, :pow
-    def initialize(x,m)
-      @x = x; @mod = m; @pow = [1]
+    def create(max)
+      Param.new(max)
     end
+  end
+  
+  module MulMod
+    MASK30 = (1 << 30) - 1;
+    MASK31 = (1 << 31) - 1;
+    MOD = (1 << 61) - 1;
+    MASK61 = MOD;
+    SEED = 37
+      # a*b mod 2^61-1を返す関数(最後にModを取る)
+    def _mul(a, b)
+      au = a >> 31
+      ad = a & MASK31
+      bu = b >> 31
+      bd = b & MASK31
+      mid = ad * bu + au * bd
+      midu = mid >> 30
+      midd = mid & MASK30
+      _mod(au * bu * 2 + midu + (midd << 31) + ad * bd)
+    end
+
+    # mod 2^61-1を計算する関数
+    def _mod(x)
+        xu = x >> 61
+        xd = x & MASK61
+        res = xu + xd
+        res -= MOD if res >= MOD
+        res
+    end
+  end
+
+  class Param
+    include MulMod
+    attr_reader :inv, :pow
+    def initialize(max)
+      k = 0; x = 0
+      k = rand(MOD) until k.gcd(MOD - 1) == 1 && (x = SEED.pow(k, MOD)) > max
+      @pow = [1, x]
+      @inv = [1, x.pow(MOD - 2, MOD)]
+    end
+
+    def _prepare(z)
+      x = @pow[1]; y = @inv[1];
+      until @pow.size > z
+        @pow << _mul(@pow[-1], x)
+        @inv << _mul(@inv[-1], y)
+      end
+    end
+
+    def join(*hz)
+      x = 0; offset = 0;
+      hz.each_slice(2) do |hash, size|
+        _prepare(offset)
+        x = _mod(x + _mul(hash, @pow[offset]))
+        offset += size
+      end
+      return x
+    end
+  
     def cumsum(seq)
       _prepare(seq.size)
       Cumsum.new(seq, self)
     end
+    
     def segment_tree(seq)
       _prepare(seq.size)
       SegmentTree.new(seq, self)
     end
-    # join(hash1, size1, hash2, [size2, hash3, size3, ...] )
-    # H(S + T) = H(S) + H(T) * x ^ |S|
-    def join(*hz)
-      x, offset = 0, 0
-      hz.each_slice(2) do |hash, size|
-        _prepare(offset)
-        x = (x + hash * @pow[offset]) % @mod
-        return x if !size
-        offset = (offset + size) % (@mod - 2)
-      end
-      return x
-    end
-    private
-    def _prepare(z)
-      @pow << @pow[-1] * @x % @mod until @pow.size > z
-    end
   end
+
   class SegmentTree
+    include MulMod
     def initialize(seq, param)
       @size = seq.size
       @param = param
-      @pow = @param.pow
-      @mod = @param.mod
-      @offset_inv = @pow[@size].pow(@mod - 2, @mod)
       @offset = (1 << (@size - 1).bit_length)
       @data = Array.new(@offset << 1, 0)
       build!(seq)
     end
     def build!(seq)
-      seq.each_with_index{|x,i| @data[@offset + i] = x * @pow[i] % @mod }
+      pow = @param.pow
+      seq.each_with_index{|x,i| @data[@offset + i] = _mul(x, pow[i]) }
       i = @offset
-      @data[i] = (@data[2 * i] + @data[2 * i + 1]) % @mod while (i -= 1) > 0
+      @data[i] = _mod(@data[2 * i] + @data[2 * i + 1]) while (i -= 1) > 0
     end
     def update(i, x)
       k = @offset + i
-      @data[k] = x * @pow[i]
-      @data[k] = (@data[2 * k] + @data[2 * k + 1]) % @mod while (k >>= 1) > 0
+      @data[k] = _mul(x, @param.pow[i])
+      @data[k] = _mod(@data[2 * k] + @data[2 * k + 1]) while (k >>= 1) > 0
     end
     alias_method :[]=, :update
     def query(l, r)
-      i = l
+      inv = @param.inv[l]
       l += @offset
       r += @offset
       x = 0
       while l < r
-        x = (x + @data[l]) % @mod and l += 1 if l.odd?
-        r -= 1 and x = (x + @data[r]) % @mod if r.odd?
+        (x = _mod(x + @data[l]); l += 1) if l.odd?
+        (r -= 1; x = _mod(x + @data[r])) if r.odd?
         l >>= 1; r >>= 1
       end
-      x * @pow[@size - i] % @mod * @offset_inv % @mod
+      _mul(x, inv)
     end
     alias_method :[], :query
   end
+
   class Cumsum
+    include MulMod
     def initialize(seq, param)
       @param = param
-      @mod = @param.mod
-      @pow = @param.pow
       @size = seq.size
-      @offset_inv = @pow[@size].pow(@mod - 2, @mod)
       @sum = Array.new(seq.size + 1, 0)
-      seq.each_with_index{|x,i|@sum[i + 1] = (@sum[i] + x * @pow[i]) % @mod }
+      pow = @param.pow
+      seq.each_with_index{|x,i| @sum[i + 1] = _mod(@sum[i] + _mul(x, pow[i])) }
     end
-    def [](l,r); (@sum[r] - @sum[l]) * @pow[@size - l] % @mod * @offset_inv % @mod; end
+    def [](l,r)
+      _mul(@sum[r] - @sum[l], @param.inv[l])
+    end
   end
 end
+
