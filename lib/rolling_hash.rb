@@ -131,7 +131,9 @@ module RollingHash
       seq.each_with_index{|x,i| @sum[i + 1] = _mod(@sum[i] + _mul(x, pow[i])) }
     end
     def [](l,r)
-      _mul(@sum[r] - @sum[l], @param.inv[l])
+      x = @sum[r] - @sum[l]
+      x += MOD if x < 0
+      _mul(x, @param.inv[l])
     end
   end
 end
