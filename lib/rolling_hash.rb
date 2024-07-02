@@ -45,7 +45,14 @@ module RollingHash
         res
     end
   end
-
+  
+  class SegmentHash
+    attr_reader :hash, :size, :param
+    def initialize(hash, size, param)
+      @size = size; @hash = hash; @param = param
+    end
+  end
+  
   class Param
     include MulMod
     attr_reader :inv, :pow
@@ -66,12 +73,14 @@ module RollingHash
 
     def join(*hz)
       x = 0; offset = 0;
-      hz.each_slice(2) do |hash, size|
+      hz.each do |seg|
+        raise if seg.param != self
+        size = seg.size
         _prepare(offset)
-        x = _mod(x + _mul(hash, @pow[offset]))
+        x = _mod(x + _mul(seg.hash, @pow[offset]))
         offset += size
       end
-      return x
+      return SegmentHash.new(x, offset, self)
     end
   
     def cumsum(seq)
@@ -108,6 +117,7 @@ module RollingHash
     alias_method :[]=, :update
     def query(l, r)
       inv = @param.inv[l]
+      w = r - l
       l += @offset
       r += @offset
       x = 0
@@ -116,7 +126,7 @@ module RollingHash
         (r -= 1; x = _mod(x + @data[r])) if r.odd?
         l >>= 1; r >>= 1
       end
-      _mul(x, inv)
+      SegmentHash.new(_mul(x, inv), w, @param)
     end
     alias_method :[], :query
   end
@@ -131,9 +141,10 @@ module RollingHash
       seq.each_with_index{|x,i| @sum[i + 1] = _mod(@sum[i] + _mul(x, pow[i])) }
     end
     def [](l,r)
+      w = r - l
       x = @sum[r] - @sum[l]
       x += MOD if x < 0
-      _mul(x, @param.inv[l])
+      SegmentHash.new(x, w, @param)
     end
   end
 end
