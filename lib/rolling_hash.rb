@@ -14,17 +14,27 @@
 module RollingHash
   class << self
     def create(max)
-      Param.new(max)
+      x = MulMod61.create_root(max)
+      Param61.new(x)
     end
   end
   
-  module MulMod
+  module MulMod61
     MASK30 = (1 << 30) - 1;
     MASK31 = (1 << 31) - 1;
     MOD = (1 << 61) - 1;
     MASK61 = MOD;
     SEED = 37
-      # a*b mod 2^61-1を返す関数(最後にModを取る)
+    
+    class << self
+      def create_root(max)
+        k = 0; x = 0
+        k = rand(MOD) until k.gcd(MOD - 1) == 1 && (x = SEED.pow(k, MOD)) > max
+        x
+      end
+    end
+
+    # a*b mod 2^61-1を返す関数(最後にModを取る)
     def _mul(a, b)
       au = a >> 31
       ad = a & MASK31
@@ -44,12 +54,12 @@ module RollingHash
         res -= MOD if res >= MOD
         res
     end
+    def mod; MOD; end
   end
 
-  class Param
-    include MulMod
+  class Param61
+    include MulMod61
     attr_reader :x, :inv, :pow
-    def mod; MOD; end
     def initialize(max)
       k = 0; x = 0
       k = rand(MOD) until k.gcd(MOD - 1) == 1 && (x = SEED.pow(k, MOD)) > max
@@ -82,7 +92,6 @@ module RollingHash
   end
 
   class Join
-    include MulMod
     attr_reader :hash, :size
     def initialize(param)
       @param = param
@@ -95,14 +104,16 @@ module RollingHash
 
     def add(hash, size)
       @param.prepare(@size)
-      @hash = _mod(@hash + _mul(hash, @param.pow[@size]))
+      param = @param
+      pow = param.pow
+      @hash = param._mod(@hash + param._mul(hash, pow[@size]))
       @size += size
       self
     end
   end
   
   class SegmentTree
-    include MulMod
+    include MulMod61
     def initialize(seq, param)
       @size = seq.size
       @param = param
@@ -111,10 +122,11 @@ module RollingHash
       build!(seq)
     end
     def build!(seq)
-      pow = @param.pow
-      seq.each_with_index{|x,i| @data[@offset + i] = _mul(x, pow[i]) }
+      param = @param
+      pow = param.pow
+      seq.each_with_index{|x,i| @data[@offset + i] = param._mul(x, pow[i]) }
       i = @offset
-      @data[i] = _mod(@data[2 * i] + @data[2 * i + 1]) while (i -= 1) > 0
+      @data[i] = param._mod(@data[2 * i] + @data[2 * i + 1]) while (i -= 1) > 0
     end
     def update(i, x)
       k = @offset + i
@@ -123,35 +135,36 @@ module RollingHash
     end
     alias_method :[]=, :update
     def query(l, r)
+      param = @param
       inv = @param.inv[l]
       w = r - l
       l += @offset
       r += @offset
       x = 0
       while l < r
-        (x = _mod(x + @data[l]); l += 1) if l.odd?
-        (r -= 1; x = _mod(x + @data[r])) if r.odd?
+        (x = param._mod(x + @data[l]); l += 1) if l.odd?
+        (r -= 1; x = param._mod(x + @data[r])) if r.odd?
         l >>= 1; r >>= 1
       end
-      _mul(x, inv)
+      param._mul(x, inv)
     end
     alias_method :[], :query
   end
 
   class Cumsum
-    include MulMod
     def initialize(seq, param)
       @param = param
       pow = @param.pow
       @size = seq.size
       @sum = Array.new(seq.size + 1, 0)
-      seq.each_with_index{|x,i| @sum[i + 1] = _mod(@sum[i] + _mul(x, pow[i])) }
+      seq.each_with_index{|x,i| @sum[i + 1] = param._mod(@sum[i] + param._mul(x, pow[i])) }
     end
     def [](l,r)
-      inv = @param.inv[l]
+      param = @param
+      inv = param.inv[l]
       x = @sum[r] - @sum[l]
-      x += MOD if x < 0
-      _mul(x, inv)
+      x += param.mod if x < 0
+      param._mul(x, inv)
     end
   end
 end
