@@ -155,25 +155,3 @@ module RollingHash
     end
   end
 end
-
-N = gets.to_i
-T = gets.chomp
-b = T.bytes
-
-rh = RollingHash.create(256)
-joiner = rh.joiner
-
-s = rh.cumsum(b)
-r = rh.cumsum(b.reverse!)
-
-ans = (0 .. N).any? do |w|
-  joiner.reset!
-  h1 = joiner.add(s[0, w], w).add(s[N + w, 2 * N], N - w).hash
-  h2 = r[N - w, 2 * N - w]
-  if h1 == h2
-    puts "#{T[0, w]}#{T[N + w, N - w]}"
-    puts w
-    exit
-  end
-end
-puts -1
