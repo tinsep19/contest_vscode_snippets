@@ -9,7 +9,7 @@
 #
 # # show hash of [1, 2, 3, 4, 5]
 # puts r1[0, 5]
-# puts rh.join(r2[5, 7], 2, r1[7, 10], 3)
+# puts rh.joiner.add(r2[0, 2], 2).add(r1[7, 10], 3).hash
 
 module RollingHash
   class << self
