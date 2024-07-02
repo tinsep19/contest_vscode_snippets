@@ -55,13 +55,15 @@ module RollingHash
   
   class Param
     include MulMod
-    attr_reader :inv, :pow
+    attr_reader :x, :inv, :pow
     def initialize(max)
       k = 0; x = 0
       k = rand(MOD) until k.gcd(MOD - 1) == 1 && (x = SEED.pow(k, MOD)) > max
+      @x = x
       @pow = [1, x]
       @inv = [1, x.pow(MOD - 2, MOD)]
     end
+    def mod; MOD; end
 
     def _prepare(z)
       x = @pow[1]; y = @inv[1];
