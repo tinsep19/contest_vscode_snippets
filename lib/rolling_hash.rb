@@ -45,17 +45,11 @@ module RollingHash
         res
     end
   end
-  
-  class SegmentHash
-    attr_reader :hash, :size, :param
-    def initialize(hash, size, param)
-      @size = size; @hash = hash; @param = param
-    end
-  end
-  
+
   class Param
     include MulMod
     attr_reader :x, :inv, :pow
+    def mod; MOD; end
     def initialize(max)
       k = 0; x = 0
       k = rand(MOD) until k.gcd(MOD - 1) == 1 && (x = SEED.pow(k, MOD)) > max
@@ -63,39 +57,50 @@ module RollingHash
       @pow = [1, x]
       @inv = [1, x.pow(MOD - 2, MOD)]
     end
-    def mod; MOD; end
 
-    def _prepare(z)
-      x = @pow[1]; y = @inv[1];
-      until @pow.size > z
-        @pow << _mul(@pow[-1], x)
-        @inv << _mul(@inv[-1], y)
-      end
-    end
-
-    def join(*hz)
-      x = 0; offset = 0;
-      hz.each do |seg|
-        raise if seg.param != self
-        size = seg.size
-        _prepare(offset)
-        x = _mod(x + _mul(seg.hash, @pow[offset]))
-        offset += size
-      end
-      return SegmentHash.new(x, offset, self)
-    end
-  
     def cumsum(seq)
-      _prepare(seq.size)
+      prepare(seq.size)
       Cumsum.new(seq, self)
     end
     
     def segment_tree(seq)
-      _prepare(seq.size)
+      prepare(seq.size)
       SegmentTree.new(seq, self)
+    end
+
+    def prepare(size)
+      x = @pow[1]; y = @inv[1];
+      until @pow.size > size
+        @pow << _mul(@pow[-1], x)
+        @inv << _mul(@inv[-1], y)
+      end
+    end
+    
+    def joiner
+      Join.new(self)
     end
   end
 
+  class Join
+    include MulMod
+    attr_reader :hash, :size
+    def initialize(param)
+      @param = param
+      reset!
+    end
+    def reset!
+      @hash = 0
+      @size = 0
+    end
+
+    def add(hash, size)
+      @param.prepare(@size)
+      @hash = _mod(@hash + _mul(hash, @param.pow[@size]))
+      @size += size
+      self
+    end
+  end
+  
   class SegmentTree
     include MulMod
     def initialize(seq, param)
@@ -128,7 +133,7 @@ module RollingHash
         (r -= 1; x = _mod(x + @data[r])) if r.odd?
         l >>= 1; r >>= 1
       end
-      SegmentHash.new(_mul(x, inv), w, @param)
+      _mul(x, inv)
     end
     alias_method :[], :query
   end
@@ -137,17 +142,38 @@ module RollingHash
     include MulMod
     def initialize(seq, param)
       @param = param
+      pow = @param.pow
       @size = seq.size
       @sum = Array.new(seq.size + 1, 0)
-      pow = @param.pow
       seq.each_with_index{|x,i| @sum[i + 1] = _mod(@sum[i] + _mul(x, pow[i])) }
     end
     def [](l,r)
-      w = r - l
+      inv = @param.inv[l]
       x = @sum[r] - @sum[l]
       x += MOD if x < 0
-      SegmentHash.new(x, w, @param)
+      _mul(x, inv)
     end
   end
 end
 
+N = gets.to_i
+T = gets.chomp
+b = T.bytes
+
+rh = RollingHash.create(256)
+joiner = rh.joiner
+
+s = rh.cumsum(b)
+r = rh.cumsum(b.reverse!)
+
+ans = (0 .. N).any? do |w|
+  joiner.reset!
+  h1 = joiner.add(s[0, w], w).add(s[N + w, 2 * N], N - w).hash
+  h2 = r[N - w, 2 * N - w]
+  if h1 == h2
+    puts "#{T[0, w]}#{T[N + w, N - w]}"
+    puts w
+    exit
+  end
+end
+puts -1
