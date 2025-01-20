@@ -14,9 +14,10 @@ class WeightedUnionFind
   attr_reader :components
   def connect?; @components == 1; end
 
-  def weight(i); @w[i]; end
+  def weight(i); leader(i); @w[i]; end
   alias_method :potensial, :weight
 
+  def diff(x, y); weight(y) - weight(x); end
   def same?(i, j); leader(i) == leader(j); end
   def leader(i)
     r = j = i
@@ -35,7 +36,9 @@ class WeightedUnionFind
   def merge(i, j, w = 0)
     x, y = leader(i), leader(j)
     x, y, i, j, w = y, x, j, i, -w if @g[x] < @g[y]
-    return @w[j] - @w[i] == w if x == y
+    
+    raise "#{i} and #{j} were already merged and inconsistent ." if x == y && diff(i, j) != w
+    
     @g[x] += @g[y]
     @g[y] = x
     @w[y] = @w[i] - @w[j] + w
