@@ -92,11 +92,14 @@ module RollingHash
   end
 
   class Join
+    include MulMod61
+    
     attr_reader :hash, :size
     def initialize(param)
       @param = param
       reset!
     end
+
     def reset!
       @hash = 0
       @size = 0
@@ -106,7 +109,7 @@ module RollingHash
       @param.prepare(@size)
       param = @param
       pow = param.pow
-      @hash = param._mod(@hash + param._mul(hash, pow[@size]))
+      @hash = _mod(@hash + _mul(hash, pow[@size]))
       @size += size
       self
     end
@@ -114,6 +117,7 @@ module RollingHash
   
   class SegmentTree
     include MulMod61
+
     def initialize(seq, param)
       @size = seq.size
       @param = param
@@ -121,19 +125,22 @@ module RollingHash
       @data = Array.new(@offset << 1, 0)
       build!(seq)
     end
+
     def build!(seq)
       param = @param
       pow = param.pow
-      seq.each_with_index{|x,i| @data[@offset + i] = param._mul(x, pow[i]) }
+      seq.each_with_index{|x,i| @data[@offset + i] = _mul(x, pow[i]) }
       i = @offset
-      @data[i] = param._mod(@data[2 * i] + @data[2 * i + 1]) while (i -= 1) > 0
+      @data[i] = _mod(@data[2 * i] + @data[2 * i + 1]) while (i -= 1) > 0
     end
+
     def update(i, x)
       k = @offset + i
       @data[k] = _mul(x, @param.pow[i])
       @data[k] = _mod(@data[2 * k] + @data[2 * k + 1]) while (k >>= 1) > 0
     end
     alias_method :[]=, :update
+
     def query(l, r)
       param = @param
       inv = @param.inv[l]
@@ -142,29 +149,30 @@ module RollingHash
       r += @offset
       x = 0
       while l < r
-        (x = param._mod(x + @data[l]); l += 1) if l.odd?
-        (r -= 1; x = param._mod(x + @data[r])) if r.odd?
+        (x = _mod(x + @data[l]); l += 1) if l.odd?
+        (r -= 1; x = _mod(x + @data[r])) if r.odd?
         l >>= 1; r >>= 1
       end
-      param._mul(x, inv)
+      _mul(x, inv)
     end
     alias_method :[], :query
   end
 
   class Cumsum
+    include MulMod61
     def initialize(seq, param)
       @param = param
       pow = @param.pow
       @size = seq.size
       @sum = Array.new(seq.size + 1, 0)
-      seq.each_with_index{|x,i| @sum[i + 1] = param._mod(@sum[i] + param._mul(x, pow[i])) }
+      seq.each_with_index{|x,i| @sum[i + 1] = _mod(@sum[i] + _mul(x, pow[i])) }
     end
     def [](l,r)
       param = @param
       inv = param.inv[l]
       x = @sum[r] - @sum[l]
-      x += param.mod if x < 0
-      param._mul(x, inv)
+      x += mod if x < 0
+      _mul(x, inv)
     end
   end
 end
