@@ -1,6 +1,4 @@
 class Integer
-  def min(x); x < self ? x : self; end
-  def max(x); x > self ? x : self; end
   def rtimes; i = self; yield i while (i -= 1) >= 0; end
   def popcount
     x_ = self;
@@ -21,3 +19,4 @@ def ans!(n); puts n; exit; end
 def yes!; puts :Yes; exit; end
 def no!; puts :No; exit; end
 def yesno!(b); puts b ? :Yes : :No; exit; end
+def yesno(b); b ? :Yes : :No; end
