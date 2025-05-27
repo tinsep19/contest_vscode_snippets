@@ -1,86 +1,75 @@
 class Trie
-  def initialize
-    @node = []
-    @leaf = []
-    @flow = []
-    @root = add_node
+  class Node
+    attr_accessor :flow, :leaf
+    def initialize
+      @g = {}
+      @leaf = 0
+      @flow = 0
+    end
+    def [](i); @g[i]; end
+    def []=(i, node); @g[i]=node; end
   end
-  def size; @flow[@root]; end
+  def initialize(node = nil)
+    @root = node || Node.new
+  end
+  def size; @root.flow; end
+
+  # get node by seq
+  # @return node represented by seq
+  def find_node(seq)
+    seq.inject(@root){|node, c| node[c] || return }
+  end
 
   # insert leaf which represented by seq
+  # @return leaf size
   def insert(seq, n = 1)
-    t = seq.inject(@root) do |u, c|
-      @flow[u] += n
-      @node[u][c] ||= add_node
+    t = seq.inject(@root) do |node, c|
+      node.flow += n
+      node[c] ||= Node.new
     end
-    @flow[t] += n
-    @leaf[t] += n
-    return t
+    t.flow += n
+    t.leaf += n
   end
-  
+  alias_method :add, :insert
+
   # delete leaf which represented by seq
   def delete(seq, n = 1)
-    t = node_id(seq)
-    return if !t || @leaf[t] < n
-    seq.inject(@root) do |u, c|
-      @flow[u] -= n
-      @node[u][c]
+    t = find_node(seq)
+    return if !t || t.leaf < n
+    seq.inject(@root) do |node, c|
+      node.flow -= n
+      node[c]
     end
-    @flow[t] -= n
-    @leaf[t] -= n
+    t.flow -= n
+    t.leaf -= n
   end
   
-  # disjoint subtree by node which represented by preseq 
-  def disjoint(preseq)
-    t = node_id(preseq)
-    return if !t
-    f = @flow[t]
-    preseq.inject(@root) do |u, c|
-      @flow[u] -= f
-      @node[u][c]
-    end
-    @flow[t] = 0
-    @leaf[t] = 0
-    @node[t] = {}
-    t
-  end
-
-  # return count of leaf which represented by seq
-  def leaf(seq)
-    t = node_id(seq)
-    t && @leaf[t]
-  end
-  
-  # return count of leaf which has seq as prefix
-  def flow(seq)
-    t = node_id(seq)
-    t && @flow[t]
-  end
-
-  # follow(seq){|path, flow, leaf| }
-  # follow(seq) => Enumerator
+  # follow(seq){|path, node| }
+  # @return nil | node which represented by seq
   def follow(seq)
     return enum_for(:follow, seq) unless block_given?
-    prefix = []
-    t = seq.inject(@root) do |u, c|
-      yield prefix, @flow[u], @leaf[u]
-      v = @node[u][c]
-      return if !v
-      prefix << c
-      v
+    path = []
+    t = seq.inject(@root) do |node, c|
+      yield path, node
+      path << c
+      node[c] || return
     end
-    yield prefix, @flow[t], @leaf[t]
+    yield path, t
+    t
   end
+  alias_method :each, :follow
   
-  private
-  def node_id(seq)
-    seq.inject(@root){|u, c| @node[u][c] || return }
+  # disjoint subtree by node which represented by preseq 
+  # @return node represented by prefix
+  def disjoint(prefix)
+    t = find_node(prefix) || return
+    f = t.flow
+    prefix.inject(@root) do |node, c|
+      node.flow -= f
+      node[c] = nil if node[c] == t
+      node[c]
+    end
+    t
   end
-  def add_node(n = 0)
-    id = @node.size
-    @leaf << 0
-    @flow << 0
-    @node << {}
-    id
-  end
+  alias_method :split, :disjoint
 end
