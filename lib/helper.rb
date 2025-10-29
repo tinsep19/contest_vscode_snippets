@@ -1,4 +1,10 @@
 class Integer
+  def isqrt
+    x = self
+    y = Integer.sqrt(x) + 1
+    y -= 1 while y * y > x
+    y
+  end
   def rtimes; i = self; yield i while (i -= 1) >= 0; end
   def popcount
     x_ = self;
@@ -20,3 +26,4 @@ def yes!; puts :Yes; exit; end
 def no!; puts :No; exit; end
 def yesno!(b); puts b ? :Yes : :No; exit; end
 def yesno(b); b ? :Yes : :No; end
+
