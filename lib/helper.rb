@@ -18,6 +18,16 @@ end
 class Array
   def chmin(i, x); self[i] = x if x < self[i]; end
   def chmax(i, x); self[i] = x if x > self[i]; end
+  def cumsum0
+    sum = Array.new(size + 1, 0)
+    size.times{|i| sum[i + 1] = sum[i] + self[i] }
+    sum
+  end
+  def rcumsum0
+    sum = Array.new(size + 1, 0)
+    size.rtimes{|i| sum[i] = sum[i + 1] + self[i] }
+    sum
+  end
 end
 def _min(a,b); a < b ? a : b; end
 def _max(a,b); a > b ? a : b; end
