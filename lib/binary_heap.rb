@@ -1,5 +1,10 @@
 class BinaryHeap
-  def initialize; @heap = []; end
+  def initialize(&block)
+    @heap = []
+    instance_exec(&block) if block_given?
+    raise "you must have _higher?" unless respond_to? :_higher?
+  end
+
   def empty?; @heap.empty?; end
   def size; @heap.size; end
   def top; @heap[0]; end
@@ -11,31 +16,38 @@ class BinaryHeap
   alias_method :<<, :push
 
   private
-  def _higher?(actual, other); actual > other; end
-
   def _up!(i)
-    x = @heap[i]
+    h = @heap
+    x = h[i]
     while i > 0
       up = (i - 1) >> 1
-      break if _higher?(@heap[up], x)
-      @heap[i] = @heap[up]
+      break if _higher?(h[up], x)
+      h[i] = h[up]
       i = up
     end
-    @heap[i] = x
+    h[i] = x
   end
 
   def _down!(up)
-    x = @heap[up]
-    n = @heap.size
+    h = @heap
+    x = h[up]
+    n = h.size
     while (j = 2 * up + 1) < n
-      j += 1 if j + 1 < n && _higher?(@heap[j + 1], @heap[j])
-      break if _higher?(x, @heap[j])
-      @heap[up] = @heap[j]
+      j += 1 if j + 1 < n && _higher?(h[j + 1], h[j])
+      y = h[j]
+      break if _higher?(x, y)
+      h[up] = y
       up = j
     end
-    @heap[up] = x
+    h[up] = x
   end
 
 end
 PQ = BinaryHeap
-
+# comment in, below
+#
+# pq = PQ.new do
+#   def _higher?(actual, other)
+#     actual < other
+#   end
+# end
