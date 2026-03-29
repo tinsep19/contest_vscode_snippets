@@ -1,12 +1,16 @@
 class SegmentTree
-
-  def initialize(seq)
+  def initialize(n, &block)
+    instance_exec(&block) if block_given?
     n = seq.size
     @offset = 1 << (n - 1).bit_length
     @data = Array.new(@offset << 1, e)
+  end
+  
+  def build(seq)
     seq.each_with_index{|x,i|@data[@offset + i] = x }
     i = @offset
     @data[i] = merge(@data[2 * i], @data[2 * i + 1]) while (i -= 1) > 0
+    self
   end
 
   def add(i, x)
@@ -32,16 +36,28 @@ class SegmentTree
     end
     return x
   end
-  
-  # sum
-  def e; 0; end
-  def merge(a,b); a + b; end
-
-  # max
-  # def e; -Float::INFINITY ; end
-  # def merge(a,b); a > b ? a : b; end
-
-  # min
-  # def e; Float::INFINITY; end
-  # def merge(a,b); a < b ? a : b; end
+  class << self
+    def from(seq, &block)
+      n = seq.size
+      new(n, &block).build(seq)
+    end
+    def min(n)
+      new(n) do
+        def e; Float::INFINITY; end
+        def merge(a,b); a < b ? a : b; end
+      end
+    end
+    def max(n)
+      new(n) do
+        def e; -Float::INFINITY; end
+        def merge(a,b); a > b ? a : b; end
+      end
+    end
+    def sum(n)
+      new(n) do
+        def e; 0; end
+        def merge(a,b); a + b; end
+      end
+    end
+  end
 end

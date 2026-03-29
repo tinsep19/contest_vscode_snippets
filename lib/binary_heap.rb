@@ -1,10 +1,12 @@
 class BinaryHeap
+  class << self
+    def min; new{|a,b| a < b }; end
+    def max; new{|a,b| a > b }; end
+  end
   def initialize(&block)
     @heap = []
-    instance_exec(&block) if block_given?
-    raise "you must have _higher?" unless respond_to? :_higher?
+    @cmp = block
   end
-
   def empty?; @heap.empty?; end
   def size; @heap.size; end
   def top; @heap[0]; end
@@ -21,7 +23,7 @@ class BinaryHeap
     x = h[i]
     while i > 0
       up = (i - 1) >> 1
-      break if _higher?(h[up], x)
+      break if @cmp[h[up], x]
       h[i] = h[up]
       i = up
     end
@@ -33,9 +35,9 @@ class BinaryHeap
     x = h[up]
     n = h.size
     while (j = 2 * up + 1) < n
-      j += 1 if j + 1 < n && _higher?(h[j + 1], h[j])
+      j += 1 if j + 1 < n && @cmp[h[j + 1], h[j]]
       y = h[j]
-      break if _higher?(x, y)
+      break if @cmp[x, y]
       h[up] = y
       up = j
     end
@@ -44,10 +46,5 @@ class BinaryHeap
 
 end
 PQ = BinaryHeap
-# comment in, below
-#
-# pq = PQ.new do
-#   def _higher?(actual, other)
-#     actual < other
-#   end
-# end
+# PQ.min / PQ.max
+# PQ.new{ def prior?(a,b); a[0] < b[0]; end }

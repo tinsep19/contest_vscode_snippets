@@ -21,7 +21,7 @@ class FenwickTree
   end
   # sum of [0, i)
   # return 0 if i == 0
-  def _prefix(i)
+  def prefix(i)
     s = 0
     while i > 0
       s += @data[i]
@@ -31,7 +31,7 @@ class FenwickTree
   end
   # sum of [l, r)
   def sum(l,r)
-    _prefix(r) - _prefix(l)
+    prefix(r) - prefix(l)
   end
   # usage bit.bsearch_index{|s| s >= x }
   # return min-index r satisfy sum of [0, r] >= x
@@ -52,4 +52,20 @@ class FenwickTree
     end
     pos < @size ? pos : nil
   end
+end
+BIT = FenwickTree
+
+def range_add_sum(n)
+  bit1 = FenwickTree.new(n)
+  bit2 = FenwickTree.new(n)
+  add = ->(l, r, x) {
+    bit1.add(l,  x)
+    bit1.add(r, -x)
+    bit2.add(l,  x * l)
+    bit2.add(r, -x * r)
+  }
+  sum = ->(l, r) {
+    r * bit1.prefix(r) - l * bit1.prefix(l) - (bit2.prefix(r) - bit2.prefix(l))
+  }
+  [add, sum]
 end

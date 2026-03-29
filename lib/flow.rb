@@ -57,7 +57,7 @@ class Flow
   end
   
   def add_bi_edge(u, v, cap = 1)
-    raise "self loop is unsupported" if from == to
+    raise "self loop is unsupported" if u == v
     u_index, v_index = @g[u].size, @g[v].size
     @g[u] << Edge.new(v, cap, v_index)
     @g[v] << Edge.new(u, cap, u_index)

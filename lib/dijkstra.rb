@@ -42,6 +42,7 @@ class Graph
         q.push(sw, e.to)
       end
     end
+    return if t
     return dist
   end
 
