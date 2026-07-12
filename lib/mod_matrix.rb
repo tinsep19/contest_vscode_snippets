@@ -12,5 +12,15 @@ def mat_pow(mat, t)
 end
 def mat_x(a, b)
   b = b.transpose
-  a.map{|row| b.map{|col| row.zip(col).inject(0){|x,y| (sum + x * y) % MOD } } }
+  a.map do |row|
+    b.map do |col|
+      sum = 0
+      i = row.size
+      while (i -= 1) >= 0
+        sum += row[i] * col[i]
+      end
+      sum % MOD
+    end
+  end
 end
+

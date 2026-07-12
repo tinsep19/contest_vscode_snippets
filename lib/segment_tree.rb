@@ -1,7 +1,6 @@
 class SegmentTree
   def initialize(n, &block)
     instance_exec(&block) if block_given?
-    n = seq.size
     @offset = 1 << (n - 1).bit_length
     @data = Array.new(@offset << 1, e)
   end
