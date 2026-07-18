@@ -58,5 +58,11 @@ class SegmentTree
         def merge(a,b); a + b; end
       end
     end
+    def xor(n)
+      new(n) do
+        def e; 0; end
+        def merge(a,b); a ^ b; end
+      end
+    end
   end
 end
